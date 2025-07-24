@@ -1,0 +1,129 @@
+its sql
+CREATE OR REPLACE TABLE reporting.matchback_today_p24 AS
+WITH current_status AS (
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_4_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_5_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_6_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_7_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_8_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_9_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_10_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_11_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_12_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_13_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_14_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_15_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_16_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_17_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_18_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_19_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_20_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_21_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_22_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_23_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_24_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_25_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_26_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_27_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_28_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_29_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_30_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_31_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_32_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_33_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_34_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_35_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_36_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_37_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_38_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_39_source
+    UNION ALL
+    SELECT * FROM democrats.av_ev_wa_20240806_primary.WA_statewide_40_source
+)
+
+SELECT 
+  COALESCE(pp.gender_combined,'U') AS gender_combined,
+  CASE 
+    WHEN pp.age_combined <= 29 THEN '18-29'
+    WHEN pp.age_combined BETWEEN 30 AND 44 THEN '30-44'
+    WHEN pp.age_combined BETWEEN 45 AND 64 THEN '45-64'
+    WHEN pp.age_combined >= 65 THEN '65+'
+    ELSE 'Not Specified' 
+  END AS age,
+  CASE 
+    WHEN pp.ethnicity_combined = 'H' THEN 'Hispanic/Latino'
+    WHEN pp.ethnicity_combined = 'B' THEN 'African American'
+    WHEN pp.ethnicity_combined = 'W' THEN 'Caucasian'
+    WHEN pp.ethnicity_combined = 'A' THEN 'Asian American'
+    WHEN pp.ethnicity_combined = 'N' THEN 'Native American'
+    ELSE 'Unknown' 
+  END AS ethnicity,
+  CONCAT(democrats.functions.width_bucket(LEAST(scr.support, 0.99),0,1,5)*20, ' - ',democrats.functions.width_bucket(LEAST(scr.support, 0.99),0,1,5)*20+20) AS support_bucket,
+  COALESCE(CONCAT(democrats.functions.width_bucket(scr.turnout,0,1,5)*20,' - ',democrats.functions.width_bucket(scr.turnout,0,1,5)*20+20),' Unscored') AS turnout_bucket,
+  cs.ballot_status,
+  CASE 
+    WHEN STRPOS(received_date,' ') = 9 THEN CAST(CONCAT(RIGHT(LEFT(received_date,8),4),'-0',LEFT(received_date,1),'-0',RIGHT(LEFT(received_date,3),1)) AS DATE)
+    WHEN STRPOS(received_date,' ') = 10 AND STRPOS(received_date,'/') = 2 THEN SAFE_CAST(CONCAT(RIGHT(LEFT(received_date,9),4),'-0',LEFT(received_date,1),'-',RIGHT(LEFT(received_date,4),2)) AS DATE)
+    WHEN STRPOS(received_date,' ') = 10 AND STRPOS(received_date,'/') = 3 THEN SAFE_CAST(CONCAT(RIGHT(LEFT(received_date,9),4),'-',LEFT(received_date,2),'-0',RIGHT(LEFT(received_date,4),1)) AS DATE)
+    ELSE NULL 
+  END AS received_date,
+  INITCAP(cs.challenge_reason) AS challenge_reason,
+  pp.county_name,
+  pp.us_cong_district_latest AS cd,
+  pp.state_house_district_latest AS ld,
+  CONCAT(pp.state_fips,pp.county_fips) AS county_fips_long,
+  SUM(CASE WHEN cs.voter_id IS NOT NULL THEN 1 ELSE 0 END) AS ballot_count,
+  SUM(CASE WHEN cs.ballot_status IN ('Accepted','Received') THEN 1 ELSE 0 END) AS votes_cast,
+  COUNT(*) AS registered_voters
+
+FROM 
+  democrats.analytics_wa.person pp
+LEFT JOIN 
+  current_status cs ON pp.sos_id = FORMAT('WA%09d',SAFE_CAST(cs.voter_id AS INT))
+JOIN 
+  democrats.scores_wa.current_scores scr ON scr.person_id = pp.person_id
+
+WHERE 
+  pp.reg_voter_flag IS TRUE
+  AND scr.support IS NOT NULL
+  AND pp.us_cong_district_latest IS NOT NULL
+  AND pp.state_house_district_latest IS NOT NULL
+  AND (pp.reg_voterfile_status = 'Active' OR cs.voter_id IS NOT NULL)
+
+GROUP BY 
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12

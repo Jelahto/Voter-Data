@@ -1,0 +1,22 @@
+### Install and load bigrquery package
+install.packages("bigrquery")
+library(bigrquery)
+
+### Authenticate with Google Cloud
+bq_auth(path = "_________.json") 
+# Set up project and dataset
+project <- 'demswasp'
+dataset <- 'sbx_williamsj1'
+
+### Define your SQL query
+sql <- "SELECT * FROM `demswasp.sbx_williamsj1.primary_results`"
+
+### Create a BigQuery connection
+con <- bq_connect(project = project)
+
+### Run the query and fetch results
+query_job <- bq_project_query(project, sql)
+query_results <- bq_table_download(query_job)
+
+### View results
+print(query_results)

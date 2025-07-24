@@ -1,0 +1,89 @@
+library(dplyr)
+library(lubridate)
+
+# Define the folder path for saving the CSV
+folder_path <- "your/folder/path"  # Replace with your desired folder path
+file_path <- file.path(folder_path, "daily_counts.csv")
+
+# List of all ballot data frames
+data_frames <- list(Ballot_10_26, Ballot_10_27, Ballot_10_31,
+                    Ballot_11_01, Ballot_11_02, Ballot_11_03,
+                    Ballot_11_04, Ballot_11_05_07, Ballot_11_08,
+                    Ballot_11_09, Ballot_11_10, Ballot_11_15,
+                    Ballot_11_16, Ballot_11_18)
+
+# Step 1: Clean and deduplicate each data frame
+data_frames <- lapply(data_frames, function(df) {
+  df %>%
+    # Convert 'StatusDate' to Date format if present
+    mutate(StatusDate = as.Date(StatusDate, format = "%m/%d/%y")) %>%
+    # Deduplicate based on 'StateVoterID' and 'StatusDate'
+    arrange(StateVoterID, StatusDate) %>%
+    group_by(StateVoterID, StatusDate) %>%
+    filter(row_number() == n()) %>%
+    ungroup()
+})
+
+# Step 2: Combine all data frames into a single table
+all_data <- bind_rows(data_frames)
+
+# Step 3: Calculate Daily Counts and Cumulative Ballot Returns
+daily_counts <- all_data %>%
+  filter(BallotStatus %in% c("Returned", "Accepted")) %>%
+  count(StatusDate) %>%
+  arrange(StatusDate) %>%
+  mutate(Cumulative_Ballots_Returned = cumsum(n)) %>%
+  rename(Date = StatusDate, Daily_Ballots_Returned = n)
+
+# Step 4: Write daily_counts to the specified folder path
+write.csv(daily_counts, file_path, row.names = FALSE)
+
+# Confirmation message
+print(paste("CSV file 'daily_counts.csv' has been saved to:", file_path))
+
+-----------------------
+library(dplyr)
+library(lubridate)
+
+# List of all ballot data frames
+data_frames <- list(Ballot_10_26, Ballot_10_27, Ballot_10_31,
+                    Ballot_11_01, Ballot_11_02, Ballot_11_03,
+                    Ballot_11_04, Ballot_11_05_07, Ballot_11_08,
+                    Ballot_11_09, Ballot_11_10, Ballot_11_15,
+                    Ballot_11_16, Ballot_11_18)
+
+# Create a function to deduplicate and get daily counts for each table
+get_daily_counts <- function(df) {
+  df %>%
+    # Convert 'StatusDate' to Date format if present
+    mutate(StatusDate = as.Date(StatusDate, format = "%m/%d/%y")) %>%
+    # Deduplicate based on 'StateVoterID' and 'StatusDate'
+    arrange(StateVoterID, StatusDate) %>%
+    group_by(StateVoterID, StatusDate) %>%
+    filter(row_number() == n()) %>%
+    ungroup() %>%
+    # Count daily ballots for 'Returned' or 'Accepted' statuses only
+    filter(BallotStatus %in% c("Returned", "Accepted")) %>%
+    count(StatusDate) %>%
+    rename(Daily_Ballots_Returned = n)
+}
+
+# Apply the function to each data frame in the list
+daily_counts_list <- lapply(data_frames, get_daily_counts)
+
+# Print each daily count result separately
+names(daily_counts_list) <- c("Ballot_10_26", "Ballot_10_27", "Ballot_10_31",
+                              "Ballot_11_01", "Ballot_11_02", "Ballot_11_03",
+                              "Ballot_11_04", "Ballot_11_05_07", "Ballot_11_08",
+                              "Ballot_11_09", "Ballot_11_10", "Ballot_11_15",
+                              "Ballot_11_16", "Ballot_11_18")
+
+# If you want to print the results for each date table
+for (name in names(daily_counts_list)) {
+  cat("\nDaily counts for:", name, "\n")
+  print(daily_counts_list[[name]])
+}
+
+# Optional: Combine all daily counts into one table if needed
+combined_daily_counts <- bind_rows(daily_counts_list, .id = "TableName")
+print(combined_daily_counts)

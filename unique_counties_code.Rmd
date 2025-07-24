@@ -1,0 +1,38 @@
+---
+title: "Precinct level results projections & results"
+output: html_document
+date: "2024-08-22"
+---
+
+```{r}
+install.packages("dplyr")
+```
+
+
+
+```{r}
+# Load necessary library
+library(dplyr)
+```
+
+
+```{r}
+# Load the data
+data <- "All_State_Precinct_Results"
+```
+
+
+```{r}
+# Get the list of unique counties
+counties <- unique(data$CountyCode)
+```
+
+
+```{r}
+# Loop through each county, filter the data, and save to a new CSV file
+for (county in counties) {
+  county_data <- data %>% filter(County == county)
+  county_file_name <- paste0(county, "_precinct_results.csv")
+  write.csv(county_data, county_file_name, row.names = FALSE)
+}
+```

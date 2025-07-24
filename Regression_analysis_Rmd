@@ -1,0 +1,88 @@
+#### R code for regression analysis
+# Load necessary libraries
+library(tidyverse)
+library(car)
+
+# Read the data
+data <- read.csv("Precicnt_level_results_Projection_comparisons.csv")
+
+# 1. Replace NaN/NA values with 0
+data[is.na(data)] <- 0
+
+# 2. List of independent variables
+independent_vars <- c(
+  'urbanicity', 'white_voters', 'native_voters', 'black_voters', 'asian_voters', 
+  'hispanic_voters', 'non_college', 'women_voters', 'men_voters', 'avg_age',
+  'ferguson_votes', 'hobbs_votes', 'pellicciotti_votes', 'mccarthy_votes',
+  'reykdal_votes', 'kuderer_votes', 'dr_schrier_votes', 'delbene_votes', 'smith_votes', 
+  'strickland_votes', 'senator_dem_share', 'all_slated_dem_share', 'all_cd_dem_share'
+)
+
+# 3. Check for multicollinearity using Variance Inflation Factor (VIF)
+vif_model <- lm(dem_share_22 ~ ., data = data[, independent_vars])
+vif_values <- vif(vif_model)
+print(vif_values)
+
+# 4. Remove variables with high multicollinearity (VIF > 10)
+high_vif_vars <- names(vif_values[vif_values > 10])
+independent_vars_filtered <- setdiff(independent_vars, high_vif_vars)
+
+# 5. Run separate regressions for each projection
+# Regression for dem_share_22
+model_proj_22 <- lm(dem_share_22 ~ ., data = data[, c('dem_share_22', independent_vars_filtered)])
+model_proj_22_summary <- summary(model_proj_22)
+print("Model for dem_share_22:")
+print(model_proj_22_summary)
+
+# Regression for dem_share_24
+model_proj_24 <- lm(dem_share_24 ~ ., data = data[, c('dem_share_24', independent_vars_filtered)])
+model_proj_24_summary <- summary(model_proj_24)
+print("\nModel for dem_share_24:")
+print(model_proj_24_summary)
+
+# Regression for dem_share_dccc
+model_proj_dccc <- lm(dem_share_dccc ~ ., data = data[, c('dem_share_dccc', independent_vars_filtered)])
+model_proj_dccc_summary <- summary(model_proj_dccc)
+print("\nModel for dem_share_dccc:")
+print(model_proj_dccc_summary)
+
+# 6. Compare models based on R-squared and AIC
+# Extract AIC and R-squared
+aic_22 <- AIC(model_proj_22)
+r_squared_22 <- summary(model_proj_22)$r.squared
+
+aic_24 <- AIC(model_proj_24)
+r_squared_24 <- summary(model_proj_24)$r.squared
+
+aic_dccc <- AIC(model_proj_dccc)
+r_squared_dccc <- summary(model_proj_dccc)$r.squared
+
+# Output AIC and R-squared for each model
+cat("\nAIC 2022: ", aic_22, "R-squared 2022: ", r_squared_22, "\n")
+cat("AIC 2024: ", aic_24, "R-squared 2024: ", r_squared_24, "\n")
+cat("AIC DCCC: ", aic_dccc, "R-squared DCCC: ", r_squared_dccc, "\n")
+
+2022 Projection Model (dem_share_22):
+
+Urbanicity: 0.169
+Average Age: 1.357
+Dr. Schrier Votes: 0.127
+DelBene Votes: -8.40e-17 (very small, almost zero)
+Smith Votes: -0.017
+Strickland Votes: 0.157
+2024 Projection Model (dem_share_24):
+
+Urbanicity: 0.171
+Average Age: 1.193
+Dr. Schrier Votes: 0.052
+DelBene Votes: -6.21e-17 (very small, almost zero)
+Smith Votes: 0.107
+Strickland Votes: 0.172
+DCCC Projection Model (dem_share_dccc):
+
+Urbanicity: 0.038
+Average Age: 0.070
+Dr. Schrier Votes: 0.899
+DelBene Votes: -2.87e-16 (very small, almost zero)
+Smith Votes: -0.180
+Strickland Votes: -0.146

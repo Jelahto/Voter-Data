@@ -1,0 +1,115 @@
+# Linear regression to predict doors knocked based on week and calls made
+model <- lm(doors_knocked ~ week + calls_made, data = data)
+
+# Summary of the model
+summary(model)
+
+# Predict future doors knocked for the next 4 weeks
+future_weeks <- data.frame(week = max(data$week) + 1:max(data$week) + 4, calls_made = mean(data$calls_made))
+predictions <- predict(model, newdata = future_weeks)
+predictions
+'
+
+Monte Carlo Simulation for Scenario Planning 
+
+# Function to simulate future doors knocked
+simulate_doors_knocked <- function(week, calls_made, n = 1000) {
+  predictions <- numeric(n)
+  for (i in 1:n) {
+    simulated_calls <- rnorm(1, mean = mean(calls_made), sd = sd(calls_made))
+    predictions[i] <- predict(model, newdata = data.frame(week = week, calls_made = simulated_calls))
+  }
+  return(predictions)
+}
+
+# Simulate for the next 4 weeks
+set.seed(123)
+simulations <- data.frame(
+  week = future_weeks$week,
+  predicted_doors_knocked = sapply(future_weeks$week, simulate_doors_knocked, calls_made = data$calls_made)
+)
+
+# Summarize the simulations
+sim_summary <- simulations %>%
+  summarise(
+    mean_prediction = mean(predicted_doors_knocked),
+    lower_ci = quantile(predicted_doors_knocked, 0.025),
+    upper_ci = quantile(predicted_doors_knocked, 0.975)
+  )
+
+sim_summary
+
+INCREMENTAL GOals
+
+# Incremental goals (e.g., increasing by 2% each week)
+incremental_goals <- future_weeks %>%
+  mutate(predicted_doors_knocked = predictions,
+         goal = predicted_doors_knocked * 1.02)  # Increasing by 2% each week
+
+incremental_goals
+
+performance Tracking with Visualization
+# Combine historical data with future predictions
+all_data <- bind_rows(
+  data %>% mutate(type = "Historical"),
+  future_weeks %>% mutate(doors_knocked = predictions, type = "Predicted")
+)
+
+# Plot historical and predicted doors knocked
+ggplot(all_data, aes(x = week, y = doors_knocked, color = type)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Historical and Predicted Doors Knocked", x = "Week", y = "Doors Knocked") +
+  theme_minimal()
+
+
+
+Optimization of Resource Allocation
+
+# Define the objective function: Maximize doors knocked
+objective_function <- function(par) {
+  week <- par[1]
+  calls_made <- par[2]
+  -predict(model, newdata = data.frame(week = week, calls_made = calls_made))  # Minimize the negative
+}
+
+# Optimization using optimx
+result <- optimx(
+  par = c(week = max(data$week) + 1, calls_made = mean(data$calls_made)),
+  fn = objective_function,
+  method = "L-BFGS-B",
+  lower = c(week = max(data$week) + 1, calls_made = min(data$calls_made)),
+  upper = c(week = max(data$week) + 4, calls_made = max(data$calls_made))
+)
+
+# Optimal week and calls_made for maximizing doors knocked
+result$par
+
+
+OR 
+
+# Define the objective function: Maximize doors knocked
+objective_function <- function(par) {
+  week <- par[1]
+  calls_made <- par[2]
+  -predict(model, newdata = data.frame(week = week, calls_made = calls_made))  # Minimize the negative
+}
+
+# Optimization using optim
+result <- optim(
+  par = c(week = max(data$week) + 1, calls_made = mean(data$calls_made)),  # Initial values
+  fn = objective_function,  # Objective function
+  method = "L-BFGS-B",  # Optimization method
+  lower = c(week = max(data$week) + 1, calls_made = min(data$calls_made)),  # Lower bounds
+  upper = c(week = max(data$week) + 4, calls_made = max(data$calls_made))  # Upper bounds
+)
+
+# Optimal week and calls_made for maximizing doors knocked
+result$par
+
+
+Linear Regression (Step 3): The lm() function is used to create a linear regression model to predict doors knocked based on week and calls made.
+Monte Carlo Simulation (Step 4): This simulation predicts the possible number of doors knocked by considering the variability in calls made.
+Incremental Goal Setting (Step 5): Goals are set to incrementally increase the predicted doors knocked by a certain percentage.
+Visualization (Step 6): Historical and predicted data are visualized to track performance over time.
+Optimization (Step 7): The optimx() function is used to find the optimal allocation of resources to maximize door-knocking efforts.

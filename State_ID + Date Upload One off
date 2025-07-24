@@ -1,0 +1,8 @@
+select
+format('WA%09d',safe_cast(voter_id as int)) as sos_id,
+received_date
+FROM
+democrats.av_ev_wa_20240806_primary.WA_statewide_3_source
+
+
+---*Replace source number with updated code

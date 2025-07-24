@@ -1,0 +1,54 @@
+---
+title: "Precinct projection comparison"
+output:
+  word_document: default
+  html_document: default
+date: "2024-09-07"
+---
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(car)
+```
+
+```{r}
+# Read the data
+subset_data <- read.csv("Proj_Precinct_Results.csv")
+```
+
+```{r}
+# Create the difference variables
+subset_data <- subset_data %>%
+  mutate(
+    diff_dem_proj_24 = senate_ferguson_share - dem_proj_24,
+    diff_dem_proj_dccc = senate_ferguson_share - dem_proj_dccc,
+    diff_dem_proj_22 = senate_ferguson_share- dem_proj_22,
+    diff_combo_projection = senate_ferguson_share - combo_projection
+  )
+```
+
+```{r}
+# Running multiple regression for diff_dem_share_24 with demographic variables
+model_24 <- lm(diff_dem_proj_24 ~ avg_dense_share + white_share + native_share + black_share + asian_share + hispanic_share + non_college_share + women_share + avg_age, data = subset_data)
+summary(model_24)
+
+```
+
+```{r}
+# Running multiple regression for diff_dem_share_dccc
+model_dccc <- lm(diff_dem_proj_dccc ~ avg_dense_share + white_share + native_share + black_share + asian_share + hispanic_share + non_college_share + women_share + avg_age, data = subset_data)
+summary(model_dccc)
+```
+
+```{r}
+# Running multiple regression for diff_dem_share_22
+model_22 <- lm(diff_dem_proj_22 ~ avg_dense_share + white_share + native_share + black_share + asian_share + hispanic_share + non_college_share + women_share + avg_age, data = subset_data)
+summary(model_22)
+```
+
+```{r}
+# Running multiple regression for diff_combo_projection
+model_combo <- lm(diff_combo_projection ~ avg_dense_share + white_share + native_share + black_share + asian_share + hispanic_share + non_college_share + women_share + avg_age, data = subset_data)
+summary(model_combo)
+```
